@@ -106,19 +106,19 @@ func ToHTTP(initials string, w http.ResponseWriter) {
 }
 
 // ToSlice simply buffers the image and returns the byte slice (as a PNG)
-func ToSlice(initials string) []byte {
+func ToSlice(initials string) ([]byte, error) {
 	rgba, err := createAvatar(initials)
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, err
 	}
 	buf := new(bytes.Buffer)
 	err = png.Encode(buf, rgba)
 	if nil == err {
-		return buf.Bytes()
+		return buf.Bytes(), err
 	} else {
 		log.Println("unable to encode image.")
-		return nil
+		return nil, err
 	}
 }
 
