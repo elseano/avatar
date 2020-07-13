@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math/rand"
 	"strings"
 
 	"github.com/argylelabcoat/avatar/palettes"
@@ -37,6 +38,9 @@ func defaultColor(initial string) (image.Uniform, image.Uniform) {
 	upperInitial := strings.ToUpper(initial)
 
 	colorIndex := strings.Index(LettersCap, upperInitial) % numCols
+	if colorIndex < 0 {
+		colorIndex = rand.Intn(numCols)
+	}
 	colorFromIndex := loadedPalette[colorIndex]
 	bgC := image.Uniform{colorFromIndex}
 
