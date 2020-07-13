@@ -1,5 +1,7 @@
 package avatar
 
+//go:generate esc -o fonts/static.go -pkg fonts resources
+
 import (
 	"bufio"
 	"bytes"
@@ -15,6 +17,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/argylelabcoat/avatar/fonts"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
@@ -145,7 +148,15 @@ func getFont(fontPath string) (*truetype.Font, error) {
 		fontPath = defaultfontFace
 	}
 	// Read the font data.
-	fontBytes, err := ioutil.ReadFile(fontPath) //fmt.Sprintf("%s/%s", sourceDir, fontFaceName))
+	var fontBytes []byte
+	fontfile, err := fonts.FS(false).Open(fontPath) //fmt.Sprintf("%s/%s", sourceDir, fontFaceName))
+
+	if err != nil {
+		return nil, err
+	}
+
+	fontBytes, err = ioutil.ReadAll(fontfile)
+
 	if err != nil {
 		return nil, err
 	}

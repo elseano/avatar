@@ -12,7 +12,7 @@ Example
 package main
 
 import (
-	"github.com/ae0000/avatar"
+	"github.com/argylelabcoat/avatar"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 
 
 ```
-[![Example](https://raw.githubusercontent.com/ae0000/avatar/master/ae.png)](https://raw.githubusercontent.com/ae0000/avatar/master/ae.png)
+[![Example](https://raw.githubusercontent.com/argylelabcoat/avatar/master/ae.png)](https://raw.githubusercontent.com/argylelabcoat/avatar/master/ae.png)
 
 You can pass in a single character as well
 
@@ -32,7 +32,7 @@ You can pass in a single character as well
 // Single initial as well..
 avatar.ToDisk("Jet", "../j.png")
 ```
-[![Example](https://raw.githubusercontent.com/ae0000/avatar/master/j.png)](https://raw.githubusercontent.com/ae0000/avatar/master/j.png)
+[![Example](https://raw.githubusercontent.com/argylelabcoat/avatar/master/j.png)](https://raw.githubusercontent.com/argylelabcoat/avatar/master/j.png)
 
 
 HTTP example
@@ -48,7 +48,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ae0000/avatar"
+	"github.com/argylelabcoat/avatar"
 	"github.com/go-chi/chi"
 )
 
