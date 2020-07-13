@@ -1,6 +1,6 @@
 package avatar
 
-//go:generate esc -o fonts/static.go -pkg fonts resources
+//go:generate esc -o fonts/static.go -pkg fonts -prefix resources/ resources
 
 import (
 	"bufio"
