@@ -1,6 +1,7 @@
 package avatar
 
-//go:generate esc -o fonts/static.go -pkg fonts -prefix "resources/" resources
+//go:generate esc -include .*\.ttf -o fonts/static.go -pkg fonts -prefix "resources/" resources
+//go:generate esc -include .*\.hex -o palettes/static.go -pkg palettes -prefix "resources/" resources
 
 import (
 	"bufio"
@@ -17,6 +18,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/anthonynsimon/bild/adjust"
+	"github.com/anthonynsimon/bild/blend"
+	"github.com/anthonynsimon/bild/effect"
+	"github.com/anthonynsimon/bild/noise"
 	"github.com/argylelabcoat/avatar/fonts"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
@@ -25,12 +30,12 @@ import (
 
 const (
 	defaultfontFace = "Roboto-Bold.ttf" //SourceSansVariable-Roman.ttf"
-	fontSize        = 210.0
+	fontSize        = 300.0
 	imageWidth      = 500.0
 	imageHeight     = 500.0
 	dpi             = 72.0
 	spacer          = 20
-	textY           = 320
+	textY           = 355
 )
 
 var fontFacePath = ""
@@ -185,6 +190,58 @@ func setImage(initials string, image *image.RGBA) {
 	imageCache.Store(initials, image)
 }
 
+type BGMethod int
+
+const (
+	Fast BGMethod = iota
+	LinenLike
+	Drops
+)
+
+func getBG(bg image.Uniform, method BGMethod) *image.RGBA {
+	switch method {
+	case Fast:
+		return FastBG(bg)
+	case LinenLike:
+		return LinenLikeBG(bg)
+	case Drops:
+		return DropsBG(bg)
+	default:
+		return FastBG(bg)
+	}
+}
+
+func FastBG(bg image.Uniform) *image.RGBA {
+	bgc := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
+	draw.Draw(bgc, bgc.Bounds(), &bg, image.Point{}, draw.Src)
+	return bgc
+}
+
+func DropsBG(bg image.Uniform) *image.RGBA {
+	bgc := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
+	draw.Draw(bgc, bgc.Bounds(), &bg, image.Point{}, draw.Src)
+	bgi := noise.Generate(imageWidth, imageHeight, &noise.Options{Monochrome: true, NoiseFn: noise.Gaussian})
+	bgi = effect.Dilate(bgi, 6)
+
+	bgi = adjust.Contrast(bgi, -0.3)
+	bgi = adjust.Brightness(bgi, 0.1)
+
+	return blend.Multiply(bgc, bgi)
+
+}
+
+func LinenLikeBG(bg image.Uniform) *image.RGBA {
+	bgc := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
+	draw.Draw(bgc, bgc.Bounds(), &bg, image.Point{}, draw.Src)
+	bgi := noise.Generate(imageWidth, imageHeight, &noise.Options{Monochrome: true, NoiseFn: noise.Binary})
+	bgi = effect.Median(bgi, 10.0)
+
+	bgi = adjust.Contrast(bgi, -0.95)
+	bgi = adjust.Brightness(bgi, 0.5)
+
+	return blend.Multiply(bgc, bgi)
+}
+
 func createAvatar(initials string) (*image.RGBA, error) {
 	// Make sure the string is OK
 	text := cleanString(initials)
@@ -202,17 +259,16 @@ func createAvatar(initials string) (*image.RGBA, error) {
 	}
 
 	// Setup the colors, text white, background based on first initial
-	textColor := image.White
-	background := defaultColor(text[0:1])
-	rgba := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
-	draw.Draw(rgba, rgba.Bounds(), &background, image.ZP, draw.Src)
+	//textColor := image.White
+	background, textColor := defaultColor(text[0:1])
+	rgba := getBG(background, Drops)
 	c := freetype.NewContext()
 	c.SetDPI(dpi)
 	c.SetFont(f)
 	c.SetFontSize(fontSize)
 	c.SetClip(rgba.Bounds())
 	c.SetDst(rgba)
-	c.SetSrc(textColor)
+	c.SetSrc(&textColor)
 	c.SetHinting(font.HintingFull)
 
 	// We need to convert the font into a "font.Face" so we can read the glyph
