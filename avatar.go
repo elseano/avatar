@@ -1,6 +1,6 @@
 package avatar
 
-//go:generate esc -o fonts/static.go -pkg fonts -prefix resources/ resources
+//go:generate esc -o fonts/static.go -pkg fonts -prefix "resources/" resources
 
 import (
 	"bufio"
@@ -149,6 +149,7 @@ func getFont(fontPath string) (*truetype.Font, error) {
 	}
 	// Read the font data.
 	var fontBytes []byte
+	fontPath = "/" + fontPath
 	fontfile, err := fonts.FS(false).Open(fontPath) //fmt.Sprintf("%s/%s", sourceDir, fontFaceName))
 
 	if err != nil {

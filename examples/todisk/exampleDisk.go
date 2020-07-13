@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ae0000/avatar"
+	"github.com/argylelabcoat/avatar"
 )
 
 func main() {
