@@ -21,12 +21,12 @@ import (
 
 const (
 	defaultfontFace = "fonts/Roboto-Bold.ttf" //SourceSansVariable-Roman.ttf"
-	fontSize        = 300.0
-	imageWidth      = 500.0
-	imageHeight     = 500.0
+	fontSize        = 60.0
+	imageWidth      = 100.0
+	imageHeight     = 100.0
 	dpi             = 72.0
-	spacer          = 20
-	textY           = 355
+	spacer          = 4
+	textY           = 71
 )
 
 //go:embed fonts/*
