@@ -1,3 +1,4 @@
+forked from: https://github.com/ae0000/avatar.git
 A V A T A R
 ===========
 
@@ -72,5 +73,5 @@ TODO
 
 - [x] HTTP example
 - [x] Caching
-- [ ] Custom colors
+- [x] Custom colors
 - [ ] Add unique colors that are missing (T-Z,0-9)
