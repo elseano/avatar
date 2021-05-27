@@ -27,6 +27,19 @@ const (
 var loadedPalette color.Palette
 var errInvalidFormat = errors.New("invalid format")
 
+func parseOrDefault(initial, bgColor, fontColor string) (bgC *image.Uniform, fgC *image.Uniform) {
+	if len(bgColor) == 0 || len(fontColor) == 0 {
+		bgC, fgC = defaultColor(initial)
+	}
+	if len(bgColor) != 0 {
+		bgC = colorFromHex(bgColor)
+	}
+	if len(fontColor) != 0 {
+		bgC = colorFromHex(fontColor)
+	}
+	return bgC, fgC
+}
+
 // parseHexColorFast was found here:
 // https://stackoverflow.com/questions/54197913/parse-hex-string-to-image-color
 func parseHexColorFast(s string) (c color.RGBA, err error) {
@@ -64,8 +77,23 @@ func parseHexColorFast(s string) (c color.RGBA, err error) {
 	return
 }
 
+func colorFromHex(s string) (colImg *image.Uniform) {
+	c, err := parseHexColorFast(s)
+	if err == nil {
+		return &image.Uniform{c}
+	} else {
+		return &White
+	}
+}
+
 // TODO add some more colors
-func defaultColor(initial string) (image.Uniform, image.Uniform) {
+func defaultColor(initial string) (bgC *image.Uniform, fgC *image.Uniform) {
+	return saltedColor(initial, 0)
+
+}
+
+// TODO add some more colors
+func saltedColor(initial string, salt int) (bgC *image.Uniform, fgC *image.Uniform) {
 	if len(loadedPalette) == 0 {
 		var err error
 		loadedPalette, err = LoadHex(palettes, "palettes/downgraded-36.hex")
@@ -78,20 +106,20 @@ func defaultColor(initial string) (image.Uniform, image.Uniform) {
 
 	upperInitial := strings.ToUpper(initial)
 
-	colorIndex := strings.Index(LettersCap, upperInitial) % numCols
+	colorIndex := (strings.Index(LettersCap, upperInitial) + salt) % numCols
 	if colorIndex < 0 {
 		colorIndex = rand.Intn(numCols)
 	}
 	colorFromIndex := loadedPalette[colorIndex]
-	bgC := image.Uniform{colorFromIndex}
+	bgC = &image.Uniform{colorFromIndex}
 
 	r, g, b, _ := colorFromIndex.RGBA()
 	bgsum := r + g + b
 	log.Println(upperInitial, bgsum, r, g, b)
-	if bgsum > Threshold {
-		return bgC, Black
-	} else {
-		return bgC, White
-	}
 
+	if bgsum > Threshold {
+		return bgC, &Black
+	} else {
+		return bgC, &White
+	}
 }

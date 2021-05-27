@@ -45,7 +45,8 @@ func ToDiskCustom(initials, path, bgColor, fontColor string) {
 
 // saveToDisk saves the image to disk
 func saveToDisk(initials, path, bgColor, fontColor string) {
-	rgba, err := createAvatar(initials, bgColor, fontColor)
+	bgC, fgC := parseOrDefault(initials, bgColor, fontColor)
+	rgba, err := createAvatar(initials, bgC, fgC)
 	if err != nil {
 		log.Println(err)
 		return
@@ -86,7 +87,8 @@ func ToHTTPCustom(initials, bgColor, fontColor string, w http.ResponseWriter) {
 
 // saveToHTTP sends the image to a http.ResponseWriter (as a PNG)
 func saveToHTTP(initials, bgColor, fontColor string, w http.ResponseWriter) {
-	rgba, err := createAvatar(initials, bgColor, fontColor)
+	bgC, fgC := parseOrDefault(initials, bgColor, fontColor)
+	rgba, err := createAvatar(initials, bgC, fgC)
 	if err != nil {
 		log.Println(err)
 		return
@@ -111,8 +113,28 @@ func saveToHTTP(initials, bgColor, fontColor string, w http.ResponseWriter) {
 }
 
 // ToSlice simply buffers the image and returns the byte slice (as a PNG)
-func ToSlice(initials string) ([]byte, error) {
-	rgba, err := createAvatar(initials)
+func ToSlice(initials string, colorSalt int) ([]byte, error) {
+	bgC, fgC := saltedColor(initials, colorSalt)
+	rgba, err := createAvatar(initials, bgC, fgC)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	buf := new(bytes.Buffer)
+	err = png.Encode(buf, rgba)
+	if nil == err {
+		return buf.Bytes(), err
+	} else {
+		log.Println("unable to encode image.")
+		return nil, err
+	}
+}
+
+// ToSlice simply buffers the image and returns the byte slice (as a PNG)
+func ToSliceCustomColors(initials string, bgColor, fontColor string) ([]byte, error) {
+
+	bgC, fgC := parseOrDefault(initials, bgColor, fontColor)
+	rgba, err := createAvatar(initials, bgC, fgC)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -181,7 +203,7 @@ func setImage(initials string, image *image.RGBA) {
 	imageCache.Store(initials, image)
 }
 
-func createAvatar(initials, bgColor, fontColor string) (*image.RGBA, error) {
+func createAvatar(initials string, bgColor, fontColor *image.Uniform) (*image.RGBA, error) {
 	// Make sure the string is OK
 	text := cleanString(initials)
 
@@ -197,31 +219,15 @@ func createAvatar(initials, bgColor, fontColor string) (*image.RGBA, error) {
 		return nil, err
 	}
 
-	background, textColor := defaultColor(text[0:1])
-	if bgColor != "" {
-		c, err := parseHexColorFast(bgColor)
-		if err == nil {
-			background = image.Uniform{c}
-		}
-	}
-
-	// Setup the colors, text white, background based on first initial
-	if fontColor != "" {
-		c, err := parseHexColorFast(fontColor)
-		if err == nil {
-			textColor = image.Uniform{c}
-		}
-	}
-
 	rgba := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
-	draw.Draw(rgba, rgba.Bounds(), &background, image.ZP, draw.Src)
+	draw.Draw(rgba, rgba.Bounds(), bgColor, image.ZP, draw.Src)
 	c := freetype.NewContext()
 	c.SetDPI(dpi)
 	c.SetFont(f)
 	c.SetFontSize(fontSize)
 	c.SetClip(rgba.Bounds())
 	c.SetDst(rgba)
-	c.SetSrc(&textColor)
+	c.SetSrc(fontColor)
 	c.SetHinting(font.HintingFull)
 
 	// We need to convert the font into a "font.Face" so we can read the glyph

@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/argylelabcoat/avatar"
 )
 
 const (
-	LettersCap = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	LettersCap = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 func main() {
@@ -19,8 +20,9 @@ func main() {
 		//fmt.Println(otherindex)
 		initials := fmt.Sprintf("%c%c", letter, LettersCap[otherindex])
 		//fmt.Println(initials)
-		fname := fmt.Sprintf("%s%s.png", outDir, initials)
-		byteslice, err := avatar.ToSlice(initials)
+		salt := rand.Int()
+		fname := fmt.Sprintf("%s%s%v.png", outDir, initials, salt)
+		byteslice, err := avatar.ToSlice(initials, salt)
 		if nil != err {
 			panic(err)
 		}
