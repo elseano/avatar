@@ -1,13 +1,12 @@
 package avatar
 
 import (
+	"embed"
 	"image"
 	"image/color"
 	"log"
 	"math/rand"
 	"strings"
-
-	"github.com/argylelabcoat/avatar/palettes"
 )
 
 // Colors for background
@@ -15,6 +14,9 @@ var (
 	White = image.Uniform{color.RGBA{255, 255, 255, 255}}
 	Black = image.Uniform{color.RGBA{0, 0, 0, 255}}
 )
+
+//go:embed palettes/*
+var palettes embed.FS
 
 const (
 	LettersCap = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -27,7 +29,7 @@ var loadedPalette color.Palette
 func defaultColor(initial string) (image.Uniform, image.Uniform) {
 	if len(loadedPalette) == 0 {
 		var err error
-		loadedPalette, err = LoadHex(palettes.FS(false), "/downgraded-36.hex")
+		loadedPalette, err = LoadHex(palettes, "palettes/downgraded-36.hex")
 		if err != nil {
 			log.Println("Failed to load Palette", err)
 		}

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"image/color"
+	"io/fs"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,7 +24,7 @@ func HexToColor(hexColor string) (color.Color, error) {
 	return nil, errors.New("Not valid RGB(A) Hex Color")
 }
 
-func LoadHex(fs http.FileSystem, fname string) (color.Palette, error) {
+func LoadHex(fs fs.FS, fname string) (color.Palette, error) {
 
 	var err error
 	var colors color.Palette

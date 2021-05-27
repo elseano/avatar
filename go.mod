@@ -1,6 +1,6 @@
 module github.com/argylelabcoat/avatar
 
-go 1.13
+go 1.16
 
 require (
 	github.com/anthonynsimon/bild v0.12.0

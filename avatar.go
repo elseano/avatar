@@ -1,16 +1,12 @@
 package avatar
 
-//go:generate esc -include .*\.ttf -o fonts/static.go -pkg fonts -prefix "resources/" resources
-//go:generate esc -include .*\.hex -o palettes/static.go -pkg palettes -prefix "resources/" resources
-
 import (
 	"bufio"
 	"bytes"
+	"embed"
 	"fmt"
 	"image"
-	"image/draw"
 	"image/png"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -18,18 +14,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/anthonynsimon/bild/adjust"
-	"github.com/anthonynsimon/bild/blend"
-	"github.com/anthonynsimon/bild/effect"
-	"github.com/anthonynsimon/bild/noise"
-	"github.com/argylelabcoat/avatar/fonts"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
 )
 
 const (
-	defaultfontFace = "Roboto-Bold.ttf" //SourceSansVariable-Roman.ttf"
+	defaultfontFace = "fonts/Roboto-Bold.ttf" //SourceSansVariable-Roman.ttf"
 	fontSize        = 300.0
 	imageWidth      = 500.0
 	imageHeight     = 500.0
@@ -38,23 +29,8 @@ const (
 	textY           = 355
 )
 
-var fontFacePath = ""
-
-// SetFontFacePath sets the font to do the business with
-func SetFontFacePath(f string) {
-	fontFacePath = f
-}
-
-// var sourceDir string
-
-// func init() {
-// 	// We need to set the source directory for the font
-// 	_, filename, _, ok := runtime.Caller(0)
-// 	if !ok {
-// 		panic("No caller information")
-// 	}
-// 	sourceDir = path.Dir(filename)
-// }
+//go:embed fonts/*
+var fonts embed.FS
 
 // ToDisk saves the image to disk
 func ToDisk(initials, path string) {
@@ -148,20 +124,14 @@ func cleanString(incoming string) string {
 	return strings.ToUpper(strings.TrimSpace(incoming))
 }
 
-func getFont(fontPath string) (*truetype.Font, error) {
+func getFont(fontPath string) (theFont *truetype.Font, err error) {
 	if fontPath == "" {
 		fontPath = defaultfontFace
 	}
 	// Read the font data.
 	var fontBytes []byte
-	fontPath = "/" + fontPath
-	fontfile, err := fonts.FS(false).Open(fontPath) //fmt.Sprintf("%s/%s", sourceDir, fontFaceName))
 
-	if err != nil {
-		return nil, err
-	}
-
-	fontBytes, err = ioutil.ReadAll(fontfile)
+	fontBytes, err = fonts.ReadFile(fontPath)
 
 	if err != nil {
 		return nil, err
@@ -190,58 +160,6 @@ func setImage(initials string, image *image.RGBA) {
 	imageCache.Store(initials, image)
 }
 
-type BGMethod int
-
-const (
-	Fast BGMethod = iota
-	LinenLike
-	Drops
-)
-
-func getBG(bg image.Uniform, method BGMethod) *image.RGBA {
-	switch method {
-	case Fast:
-		return FastBG(bg)
-	case LinenLike:
-		return LinenLikeBG(bg)
-	case Drops:
-		return DropsBG(bg)
-	default:
-		return FastBG(bg)
-	}
-}
-
-func FastBG(bg image.Uniform) *image.RGBA {
-	bgc := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
-	draw.Draw(bgc, bgc.Bounds(), &bg, image.Point{}, draw.Src)
-	return bgc
-}
-
-func DropsBG(bg image.Uniform) *image.RGBA {
-	bgc := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
-	draw.Draw(bgc, bgc.Bounds(), &bg, image.Point{}, draw.Src)
-	bgi := noise.Generate(imageWidth, imageHeight, &noise.Options{Monochrome: true, NoiseFn: noise.Gaussian})
-	bgi = effect.Dilate(bgi, 6)
-
-	bgi = adjust.Contrast(bgi, -0.3)
-	bgi = adjust.Brightness(bgi, 0.1)
-
-	return blend.Multiply(bgc, bgi)
-
-}
-
-func LinenLikeBG(bg image.Uniform) *image.RGBA {
-	bgc := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
-	draw.Draw(bgc, bgc.Bounds(), &bg, image.Point{}, draw.Src)
-	bgi := noise.Generate(imageWidth, imageHeight, &noise.Options{Monochrome: true, NoiseFn: noise.Binary})
-	bgi = effect.Median(bgi, 10.0)
-
-	bgi = adjust.Contrast(bgi, -0.95)
-	bgi = adjust.Brightness(bgi, 0.5)
-
-	return blend.Multiply(bgc, bgi)
-}
-
 func createAvatar(initials string) (*image.RGBA, error) {
 	// Make sure the string is OK
 	text := cleanString(initials)
@@ -253,7 +171,7 @@ func createAvatar(initials string) (*image.RGBA, error) {
 	}
 
 	// Load and get the font
-	f, err := getFont(fontFacePath)
+	f, err := getFont(defaultfontFace)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +179,7 @@ func createAvatar(initials string) (*image.RGBA, error) {
 	// Setup the colors, text white, background based on first initial
 	//textColor := image.White
 	background, textColor := defaultColor(text[0:1])
-	rgba := getBG(background, Drops)
+	rgba := GetDefaultBG(background)
 	c := freetype.NewContext()
 	c.SetDPI(dpi)
 	c.SetFont(f)
