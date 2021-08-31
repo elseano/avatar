@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 	"image/png"
 	"net/http"
@@ -179,8 +180,12 @@ func getFont(fontPath string) (theFont *truetype.Font, err error) {
 
 var imageCache sync.Map
 
-func getImage(initials string) *image.RGBA {
-	value, ok := imageCache.Load(initials)
+func cacheKey(initials string, fg color.Color, bg color.Color) string {
+	return strings.ToLower(fmt.Sprintf("%s%v%v", initials, fg, bg))
+}
+
+func getImage(initials string, fg color.Color, bg color.Color) *image.RGBA {
+	value, ok := imageCache.Load(cacheKey(initials, fg, bg))
 
 	if !ok {
 		return nil
@@ -193,8 +198,8 @@ func getImage(initials string) *image.RGBA {
 	return image
 }
 
-func setImage(initials string, image *image.RGBA) {
-	imageCache.Store(initials, image)
+func setImage(initials string, fg color.Color, bg color.Color, image *image.RGBA) {
+	imageCache.Store(cacheKey(initials, fg, bg), image)
 }
 
 func createAvatar(initials string, bgColor, fontColor *image.Uniform) (*image.RGBA, error) {
@@ -202,7 +207,7 @@ func createAvatar(initials string, bgColor, fontColor *image.Uniform) (*image.RG
 	text := cleanString(initials)
 
 	// Check cache
-	cachedImage := getImage(text)
+	cachedImage := getImage(text, fontColor.C, bgColor.C)
 	if cachedImage != nil {
 		return cachedImage, nil
 	}
@@ -265,7 +270,7 @@ func createAvatar(initials string, bgColor, fontColor *image.Uniform) (*image.RG
 	}
 
 	// Cache it
-	setImage(text, rgba)
+	setImage(initials, fontColor.C, bgColor.C, rgba)
 
 	return rgba, nil
 }

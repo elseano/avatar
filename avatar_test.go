@@ -38,3 +38,10 @@ func TestGetFont(t *testing.T) {
 		t.Error("should of been able to return a font")
 	}
 }
+
+func TestMake(t *testing.T) {
+	_, err := ToSlice("blah", 1)
+	if err != nil {
+		t.Error(err)
+	}
+}
