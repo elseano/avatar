@@ -1,10 +1,13 @@
-forked from: https://github.com/ae0000/avatar.git
 A V A T A R
 ===========
 
 Create avatars based on names. The colors are chosen based on the first
 character. You can save to disk ```ToDisk``` or send back over HTTP 
 ```ToHTTP```.
+
+This fork is based off github.com/argylelabcoat/avatar, which is forked from andrew's https://github.com/ae0000/avatar. 
+
+All this fork cares about is ditching the logging and `os.Exit` bits, instead returning `error` values. This makes it safer to use as a library.
 
 Example
 -------
