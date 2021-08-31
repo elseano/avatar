@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/argylelabcoat/avatar"
+	"github.com/elseano/avatar"
 
 	"github.com/go-chi/chi"
 )

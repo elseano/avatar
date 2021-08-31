@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/argylelabcoat/avatar"
+	"github.com/elseano/avatar"
 )
 
 const (

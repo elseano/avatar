@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"os"
 
-	"github.com/argylelabcoat/avatar"
+	"github.com/elseano/avatar"
 )
 
 const (

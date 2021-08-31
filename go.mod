@@ -1,4 +1,4 @@
-module github.com/argylelabcoat/avatar
+module github.com/elseano/avatar
 
 go 1.16
 
