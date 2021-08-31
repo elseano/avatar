@@ -35,7 +35,7 @@ func parseOrDefault(initial, bgColor, fontColor string) (bgC *image.Uniform, fgC
 		bgC = colorFromHex(bgColor)
 	}
 	if len(fontColor) != 0 {
-		bgC = colorFromHex(fontColor)
+		fgC = colorFromHex(fontColor)
 	}
 	return bgC, fgC
 }
