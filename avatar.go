@@ -8,7 +8,6 @@ import (
 	"image"
 	"image/draw"
 	"image/png"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,29 +33,27 @@ const (
 var fonts embed.FS
 
 // ToDisk saves the image to disk
-func ToDisk(initials, path string) {
-	saveToDisk(initials, path, "", "")
+func ToDisk(initials, path string) error {
+	return saveToDisk(initials, path, "", "")
 }
 
 // ToDiskCustom saves the image to disk
-func ToDiskCustom(initials, path, bgColor, fontColor string) {
-	saveToDisk(initials, path, bgColor, fontColor)
+func ToDiskCustom(initials, path, bgColor, fontColor string) error {
+	return saveToDisk(initials, path, bgColor, fontColor)
 }
 
 // saveToDisk saves the image to disk
-func saveToDisk(initials, path, bgColor, fontColor string) {
+func saveToDisk(initials, path, bgColor, fontColor string) error {
 	bgC, fgC := parseOrDefault(initials, bgColor, fontColor)
 	rgba, err := createAvatar(initials, bgC, fgC)
 	if err != nil {
-		log.Println(err)
-		return
+		return fmt.Errorf("unable to create avatar: %w", err)
 	}
 
 	// Save image to disk
 	out, err := os.Create(path)
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		return fmt.Errorf("unable to create target path: %w", err)
 	}
 	defer out.Close()
 
@@ -64,34 +61,33 @@ func saveToDisk(initials, path, bgColor, fontColor string) {
 
 	err = png.Encode(b, rgba)
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		return fmt.Errorf("unable to encode image: %w", err)
 	}
 
 	err = b.Flush()
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		return err
 	}
+
+	return nil
 }
 
 // ToHTTP sends the image to a http.ResponseWriter (as a PNG)
-func ToHTTP(initials string, w http.ResponseWriter) {
-	saveToHTTP(initials, "", "", w)
+func ToHTTP(initials string, w http.ResponseWriter) error {
+	return saveToHTTP(initials, "", "", w)
 }
 
 // ToHTTPCustom sends the image to a http.ResponseWriter (as a PNG)
-func ToHTTPCustom(initials, bgColor, fontColor string, w http.ResponseWriter) {
-	saveToHTTP(initials, bgColor, fontColor, w)
+func ToHTTPCustom(initials, bgColor, fontColor string, w http.ResponseWriter) error {
+	return saveToHTTP(initials, bgColor, fontColor, w)
 }
 
 // saveToHTTP sends the image to a http.ResponseWriter (as a PNG)
-func saveToHTTP(initials, bgColor, fontColor string, w http.ResponseWriter) {
+func saveToHTTP(initials, bgColor, fontColor string, w http.ResponseWriter) error {
 	bgC, fgC := parseOrDefault(initials, bgColor, fontColor)
 	rgba, err := createAvatar(initials, bgC, fgC)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	b := new(bytes.Buffer)
@@ -99,7 +95,7 @@ func saveToHTTP(initials, bgColor, fontColor string, w http.ResponseWriter) {
 
 	err = png.Encode(b, rgba)
 	if err != nil {
-		log.Println("unable to encode image.")
+		return fmt.Errorf("unable to encode image: %w", err)
 	}
 
 	w.Header().Set("Content-Type", "image/png")
@@ -108,8 +104,10 @@ func saveToHTTP(initials, bgColor, fontColor string, w http.ResponseWriter) {
 	w.Header().Set("Etag", `"`+key+`"`)
 
 	if _, err := w.Write(b.Bytes()); err != nil {
-		log.Println("unable to write image.")
+		return fmt.Errorf("unable to write image to response: %w", err)
 	}
+
+	return nil
 }
 
 // ToSlice simply buffers the image and returns the byte slice (as a PNG)
@@ -117,16 +115,14 @@ func ToSlice(initials string, colorSalt int) ([]byte, error) {
 	bgC, fgC := saltedColor(initials, colorSalt)
 	rgba, err := createAvatar(initials, bgC, fgC)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		return nil, fmt.Errorf("unable to create avatar: %w", err)
 	}
 	buf := new(bytes.Buffer)
 	err = png.Encode(buf, rgba)
 	if nil == err {
 		return buf.Bytes(), err
 	} else {
-		log.Println("unable to encode image.")
-		return nil, err
+		return nil, fmt.Errorf("unable to encode image: %w", err)
 	}
 }
 
@@ -136,16 +132,14 @@ func ToSliceCustomColors(initials string, bgColor, fontColor string) ([]byte, er
 	bgC, fgC := parseOrDefault(initials, bgColor, fontColor)
 	rgba, err := createAvatar(initials, bgC, fgC)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		return nil, fmt.Errorf("unable to create avatar: %w", err)
 	}
 	buf := new(bytes.Buffer)
 	err = png.Encode(buf, rgba)
 	if nil == err {
 		return buf.Bytes(), err
 	} else {
-		log.Println("unable to encode image.")
-		return nil, err
+		return nil, fmt.Errorf("unable to encode image: %w", err)
 	}
 }
 
@@ -177,7 +171,7 @@ func getFont(fontPath string) (theFont *truetype.Font, err error) {
 	fontBytes, err = fonts.ReadFile(fontPath)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to read font file: %w", err)
 	}
 
 	return freetype.ParseFont(fontBytes)
@@ -216,7 +210,7 @@ func createAvatar(initials string, bgColor, fontColor *image.Uniform) (*image.RG
 	// Load and get the font
 	f, err := getFont(defaultfontFace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid font: %w", err)
 	}
 
 	rgba := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
